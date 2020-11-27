@@ -1,0 +1,104 @@
+(in-package #:client.utils)
+
+(defun empty-object-p (obj)
+  (and (= (chain -object (keys obj) length) 0)
+       (= (@ obj constructor) -object)))
+
+;; think about using this one
+;; https://medium.com/@dtinth/immutable-js-persistent-data-structures-and-structural-sharing-6d163fbd73d2
+(eval-when (:compile-toplevel)
+  (defpsmacro clone-object (obj)
+    `(chain -j-s-o-n (parse (chain -j-s-o-n (stringify ,obj)))))
+  
+  (defpsmacro printv (&rest values)
+    `(chain console (log ,@values)))
+
+  (defpsmacro print-error (&rest values)
+    `(chain console (error ,@values))))
+
+(defun set-cookie (key value)
+  (setf (@ document cookie) (+ key "=" (chain -j-s-o-n (stringify value)))))
+
+(defun get-cookie (key)
+  (let ((value (chain document cookie
+		      (replace
+		       (regexp "(?:(?:^|.*;\\s*)" key "\\s*\\=\\s*([^;]*).*$)|^.*$") "$1"))))
+    (when value (chain -j-s-o-n (parse value)))))
+
+(defun array-p (obj)
+  (chain -array (is-array obj)))
+
+(defun first (arr)
+  (aref arr 0))
+
+(defun find (item arr &key test key)
+  (let ((fn (if test
+		 (lambda (elem index array)
+		   (apply test item (if key (getprop elem key) elem)))
+		 (lambda (elem index array)
+		   (= item (if key (getprop elem key) elem))))))
+    (chain arr (find fn))))
+
+(defun object-keys (o)
+  (if o
+      (chain -object (keys o))
+      #()))
+
+(defun join (arr sep)
+  (chain arr (join sep)))
+
+(defun empty-p (arr)
+  (if arr
+      (= (@ arr length) 0)
+      t))
+
+(eval-when (:compile-toplevel)
+  (defpsmacro get-> (v &rest path)
+    (if (> (length path) 1)
+	(let ((conditions (loop for i from 1 to (1- (length path))
+				collect `(@ ,v ,@(subseq path 0 i)))))
+	  `(when (and ,@conditions)
+	     (@ ,v ,@path)))
+	`(@ ,v ,@ path))))
+
+(defun style-prop (el prop)
+  (chain window
+	 (get-computed-style el)
+	 (get-property-value prop)))
+
+(eval-when (:compile-toplevel)
+  (defpsmacro new-state (&body body)
+    `(chain this (set-state ,@body))))
+
+(defun distinct (a)
+  (chain a (filter (lambda (value index self)
+		     (= (chain self (index-of value)) index)))))
+
+(defun range (from to)
+  (loop for i from from to to
+	collect i))
+
+(eval-when (:compile-toplevel)
+  (defpsmacro concat (&rest arrs)
+    `(chain ,(car arrs) (concat ,@(cdr arrs)))))
+
+(defun sort (a &optional fn)
+  (if fn
+      (chain a (sort fn))
+      (chain a (sort))))
+
+(defun length (a)
+  (chain a (length)))
+
+(defun contains-p (a v)
+  (not (= (chain a (index-of v)) -1)))
+
+(defun push (a v)
+  (chain a (push v))
+  a)
+
+(defun last (a)
+  (aref a (1- (length a))))
+
+(defun random ()
+  (chain -math (random)))

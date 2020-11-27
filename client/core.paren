@@ -1,0 +1,13 @@
+(in-package #:client.core)
+
+(def-view :hello (props)
+  ((:div style ((:color "red")))
+   (:span (@ props title))))
+
+(def-widget :app
+  (render ()
+    ((:div id :app)
+     ((:hello title "Hello from React")))))
+ 
+(defun init ()
+  (react-root :app))
